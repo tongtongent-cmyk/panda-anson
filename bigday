@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Panda & Anson 12.29 全員詳細行程</title>
+    <style>
+        :root {
+            --primary: #6B705C;
+            --accent: #C5A059;
+            --bg: #FAF9F6;
+            --card: #FFFFFF;
+        }
+        body { margin: 0; background: var(--bg); font-family: -apple-system, "Noto Sans TC", sans-serif; color: #333; }
+        header { background: #fff; padding: 15px; text-align: center; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 2000; }
+        header h1 { margin: 0; font-size: 1rem; color: var(--accent); letter-spacing: 2px; }
+        
+        .nav-scroller { background: #fff; border-bottom: 1px solid #eee; position: sticky; top: 51px; z-index: 1000; overflow-x: auto; white-space: nowrap; padding: 10px; display: flex; }
+        .nav-scroller::-webkit-scrollbar { display: none; }
+        .tab-btn { flex: 0 0 auto; padding: 8px 15px; margin-right: 8px; border-radius: 20px; border: 1px solid var(--primary); font-size: 0.85rem; color: var(--primary); cursor: pointer; }
+        .tab-btn.active { background: var(--primary); color: #fff; }
+
+        .content { padding: 15px; max-width: 600px; margin: 0 auto; }
+        .person-section { display: none; }
+        .person-section.active { display: block; animation: fadeIn 0.3s ease; }
+
+        .task-item { margin-bottom: 15px; border-left: 3px solid var(--accent); padding-left: 15px; }
+        .time-label { font-size: 0.75rem; font-weight: bold; color: var(--accent); margin-bottom: 2px; display: block; }
+        .info-card { background: var(--card); border-radius: 8px; padding: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .item-title { font-weight: bold; font-size: 1rem; color: var(--primary); margin-bottom: 5px; }
+        .detail-text { font-size: 0.85rem; color: #555; line-height: 1.5; white-space: pre-line; border-top: 1px dashed #eee; padding-top: 5px; margin-top: 5px; }
+        
+        .bless-btn { background: #8B4513; color: white; border: none; width: 100%; padding: 12px; margin-top: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .bless-box { display: none; background: #FFF9F0; border: 1px solid #D2B48C; padding: 15px; margin-top: 10px; border-radius: 6px; font-size: 0.85rem; line-height: 1.8; }
+        .bless-cat { color: #B22222; font-weight: bold; display: block; margin-top: 10px; border-bottom: 1px solid #DEB887; padding-bottom: 2px; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        footer { text-align: center; font-size: 0.7rem; color: #999; padding: 30px; }
+    </style>
+</head>
+<body>
+
+<header><h1>PANDA & ANSON · 12.29</h1></header>
+
+<div class="nav-scroller" id="tabContainer"></div>
+
+<div class="content" id="mainContent"></div>
+
+<script>
+// 敬茶祝福語內容
+const blessingContent = `
+    <div class="bless-box">
+        <span class="bless-cat">1. 父母長輩</span>
+        • 飲過新人茶，子孫聽晒話。<br>
+        • 飲茶飲到尾，年頭靚到落年尾。<br>
+        • 一啖飲到尾，年頭賺到落年尾。<br>
+        • 飲過 (女婿/新抱) 茶，富貴又榮華。
+        
+        <span class="bless-cat">2. 戴金器吉利說話</span>
+        • 戴起大囍，戴到風生水起 / 金銀遍地。<br>
+        • 戴起大囍，戴到好快有身己。<br>
+        • 戴起大囍，保證你家肥屋潤笑嘻嘻。<br>
+        • 戴過龍鳳鈪，等你快啲買豪宅。<br>
+        • 金鍊戴上頸，好快住山頂。<br>
+        • 戴過金手鍊，有錢又有面。
+        
+        <span class="bless-cat">3. 親戚專屬 (稱呼)</span>
+        • 呀爺：日日笑騎騎 / 公公：買樓唔洗供<br>
+        • 大伯：越黎越發 / 阿哥：年年換新車<br>
+        • 家姐：日日揸靚車 / 姐夫：皮膚靚到Mask唔洗Full<br>
+        • 姨媽：出年幫手抱蘇蝦 / 姨丈：六合彩中頭獎<br>
+        • 叔叔：年年換大屋 / 舅父：買股票唔使估
+    </div>
+`;
+
+// 從 Excel 完全提取的數據 (16人)
+const staffData = [
+    { name: "新娘", tasks: [
+        {a: "06:30-09:00", b: "化妝", d: "6:45開始化妝"},
+        {a: "09:00-09:30", b: "男家去女家車程", d: ""},
+        {a: "09:30-10:15", b: "新郎+兄弟團花絮", d: ""},
+        {a: "10:15-10:45", b: "迎親", d: "迎親：玩遊戲+接新娘"},
+        {a: "10:45-11:15", b: "女家敬茶", d: "跪低敬茶俾長輩"},
+        {a: "11:15-11:45", b: "女家去男家車程", d: "起行過男家（黃瑞華車）"},
+        {a: "11:45-12:15", b: "男家敬茶", d: "跪低敬茶俾長輩"},
+        {a: "12:15-12:45", b: "男家去女家車程", d: "返回荔欣苑，跟車及keep物資配搭同上"},
+        {a: "12:45-13:45", b: "Lunch time", d: "38樓換妝頭"},
+        {a: "13:45-15:00", b: "下午外影", d: "荔枝角公園外拍"},
+        {a: "15:00-16:15", b: "休息+收拾行裝", d: "大家都攰啦，上38樓休息一下，休息期間姊妹團補妝"},
+        {a: "", b: "", d: "Keep 自己"},
+        {a: "16:15-16:45", b: "車程去九龍塘", d: "車程去九龍塘"},
+        {a: "16:45-17:30", b: "Set場（二樓）", d: "換衫換妝頭"},
+        {a: "17:30-18:15", b: "", d: "出去睇set 場"},
+        {a: "18:00-18:20", b: "迎賓", d: "同來賓吹水？"},
+        {a: "18:20-18:25", b: "安排賓客上3樓", d: "捉老豆準備行禮"},
+        {a: "18:30-18:45", b: "行禮", d: "行禮"},
+        {a: "18:45-19:45", b: "影相+敬茶", d: "影相+敬茶"},
+        {a: "19:45-20:00", b: "入席", d: "準備入席"},
+        {a: "20:00-20:15", b: "播放成長片段", d: ""},
+        {a: "", b: "新人進場", d: "新人進場"},
+        {a: "", b: "切餅、交杯、祝酒致謝", d: "切餅、交杯、祝酒致謝"},
+        {a: "20:15-22:30", b: "開始宴會", d: "開餐"},
+        {a: "", b: "播放早拍晚播", d: ""},
+        {a: "", b: "換紅裙", d: "換衫換妝頭"},
+        {a: "", b: "敬酒時間", d: "敬酒"},
+        {a: "", b: "補影相", d: "人肉佈景板"},
+        {a: "", b: "送客", d: "送客"},
+        {a: "22:30-23:00", b: "散席交通安排", d: "幫忙清場後跟（車）走"}
+    ]},
+    { name: "新郎", tasks: [
+        {a: "09:00-09:30", b: "男家去女家車程", d: "9:00石籬邨石歡樓出發"},
+        {a: "09:30-10:15", b: "新郎+兄弟團花絮", d: "荔欣苑迴旋處拍攝花絮+泊車"},
+        {a: "10:15-10:45", b: "迎親", d: "迎親：玩遊戲+接新娘"},
+        {a: "10:45-11:15", b: "女家敬茶", d: "跪低敬茶俾長輩"},
+        {a: "11:15-11:45", b: "女家去男家車程", d: "起行過男家（黃瑞華車）"},
+        {a: "11:45-12:15", b: "男家敬茶", d: "跪低敬茶俾長輩"},
+        {a: "15:00-16:15", b: "", d: "Keep 戒指、身分證"},
+        {a: "18:00-18:20", b: "迎賓", d: "同來賓吹水？"},
+        {a: "18:20-18:25", b: "安排賓客上3樓", d: "準備行禮"},
+        {a: "18:30-18:45", b: "行禮", d: "行禮"}
+    ]},
+    { name: "家姐", tasks: [
+        {a: "06:30-09:00", b: "化妝", d: "6:30到樓下接化妝師們"},
+        {a: "10:45-11:15", b: "女家敬茶", d: "飲茶"},
+        {a: "11:45-12:15", b: "男家敬茶", d: "keep 男家金器"},
+        {a: "16:45-17:30", b: "Set場", d: "幫新娘換妝頭"},
+        {a: "17:30-18:15", b: "", d: "幫mc化妝"},
+        {a: "18:30-18:45", b: "行禮", d: "開槍噴泡泡造勢"}
+    ]},
+    { name: "雯雯", tasks: [
+        {a: "06:30-09:00", b: "化妝", d: "7:30到達化妝"},
+        {a: "10:15-10:45", b: "迎親", d: "迎親：玩遊戲+接新娘"},
+        {a: "10:45-11:15", b: "女家敬茶", d: "拎托盤"},
+        {a: "11:15-11:45", b: "車程", d: "拎紅傘出門、跟臭腳車"},
+        {a: "18:00-18:20", b: "迎賓", d: "迎賓區登記女家賓客及收利是"},
+        {a: "18:30-18:45", b: "行禮", d: "開槍噴泡泡造勢"}
+    ]},
+    { name: "思靈", tasks: [
+        {a: "06:30-09:00", b: "化妝", d: "6:45到達化妝"},
+        {a: "10:45-11:15", b: "女家敬茶", d: "敬茶祝福語"},
+        {a: "11:45-12:15", b: "男家敬茶", d: "敬茶祝福語"},
+        {a: "16:45-17:30", b: "Set場", d: "Set 相簿枱、油畫架、迎賓枱、文具"},
+        {a: "18:00-18:20", b: "迎賓", d: "Time keeper"},
+        {a: "18:30-18:45", b: "行禮", d: "開槍噴泡泡造勢"}
+    ]},
+    { name: "湯湯", tasks: [
+        {a: "06:30-09:00", b: "化妝", d: "6:45到達化妝"},
+        {a: "10:45-11:15", b: "女家敬茶", d: "幫手換杯洗杯斟茶換茶"},
+        {a: "11:45-12:15", b: "男家敬茶", d: "幫手換杯洗杯斟茶換茶"},
+        {a: "18:00-18:20", b: "迎賓", d: "rundown owners"},
+        {a: "18:30-18:45", b: "行禮", d: "開槍噴泡泡造勢"}
+    ]},
+    { name: "香雞", tasks: [
+        {a: "10:45-11:15", b: "女家敬茶", d: "幫手換杯洗杯斟茶換茶"},
+        {a: "15:00-16:15", b: "", d: "相簿、油畫"},
+        {a: "18:00-18:20", b: "迎賓", d: "聽湯姐指示"},
+        {a: "18:30-18:45", b: "行禮", d: "開槍噴泡泡造勢"}
+    ]},
+    { name: "獅子", tasks: [
+        {a: "09:00-09:30", b: "車程", d: "9:00石籬邨石歡樓出發"},
+        {a: "11:15-11:45", b: "車程", d: "載：湯湯、思靈、香雞"},
+        {a: "16:15-16:45", b: "車程", d: "落去拎定車，迴旋處等"},
+        {a: "18:30-18:45", b: "行禮", d: "開槍噴泡泡造勢"}
+    ]},
+    { name: "臭腳", tasks: [
+        {a: "09:00-09:30", b: "車程", d: "9:00石籬邨石歡樓出發"},
+        {a: "11:15-11:45", b: "車程", d: "載：一P一V、家姐、雯雯"},
+        {a: "15:00-16:15", b: "", d: "名單、座位表、人情袋、文具等"},
+        {a: "18:30-18:45", b: "行禮", d: "開槍噴泡泡造勢"}
+    ]},
+    { name: "黃瑞華", tasks: [
+        {a: "09:00-09:30", b: "車程", d: "9:00石籬邨石歡樓出發"},
+        {a: "11:15-11:45", b: "車程", d: "主婚車司機"},
+        {a: "18:00-18:20", b: "迎賓", d: "登記男家賓客及收利是"}
+    ]},
+    { name: "化妝師", tasks: [
+        {a: "06:30-09:00", b: "化妝", d: "6:30到荔欣苑迴旋處"},
+        {a: "09:00-09:30", b: "移動", d: "到石籬二村化男家長輩（兩位）"}
+    ]},
+    { name: "一P一V", tasks: [
+        {a: "09:00-09:45", b: "拍攝", d: "到女家拍花絮"},
+        {a: "13:45-15:00", b: "外影", d: "外拍"},
+        {a: "17:30-18:15", b: "晚間拍攝", d: "晚間拍攝"}
+    ]},
+    { name: "MC Lam", tasks: [
+        {a: "17:00", b: "抵達", d: "搵Niki夾rundown"},
+        {a: "18:25", b: "主持", d: "Open mic"},
+        {a: "22:30", b: "結束", d: "宣佈晚宴完"}
+    ]},
+    { name: "大佬文", tasks: [
+        {a: "06:30", b: "早餐", d: "買早餐俾姊妹團"},
+        {a: "11:15-11:45", b: "移動", d: "拎化妝箱去38樓"},
+        {a: "15:00-16:15", b: "休息", d: "提供地方供休息，金器袋記得帶去九龍塘"},
+        {a: "22:30", b: "散席", d: "載阿爸、阿媽、阿嫂、蟲月"}
+    ]},
+    { name: "姐夫", tasks: [
+        {a: "10:45-11:15", b: "飲茶", d: "10:00帶嵐嵐到達"},
+        {a: "22:30", b: "散席", d: "載二伯、二母、嵐嵐、家姐"}
+    ]},
+    { name: "關蟲月", tasks: [
+        {a: "06:30", b: "早餐", d: "買早餐俾姊妹團"},
+        {a: "18:00-18:20", b: "迎賓", d: "登記女家賓客及收利是"},
+        {a: "22:30", b: "散席", d: "跟大佬文車走"}
+    ]}
+];
+
+const tabContainer = document.getElementById('tabContainer');
+const mainContent = document.getElementById('mainContent');
+
+staffData.forEach((person, index) => {
+    // 建立頂部按鈕
+    const btn = document.createElement('div');
+    btn.className = 'tab-btn' + (index === 0 ? ' active' : '');
+    btn.innerText = person.name;
+    btn.onclick = () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.person-section').forEach(s => s.classList.remove('active'));
+        document.getElementById('section-' + index).classList.add('active');
+        window.scrollTo({top: 0});
+    };
+    tabContainer.appendChild(btn);
+
+    // 建立內容區域
+    const section = document.createElement('div');
+    section.className = 'person-section' + (index === 0 ? ' active' : '');
+    section.id = 'section-' + index;
+
+    let html = `<h2 style="color:var(--primary); text-align:center;">${person.name} 的全日行程</h2>`;
+    
+    person.tasks.forEach(task => {
+        // 思靈專屬判斷：如果在敬茶時段
+        const isSzeLingBlessing = person.name === "思靈" && task.b.includes("敬茶");
+        
+        html += `
+            <div class="task-item">
+                <span class="time-label">${task.a}</span>
+                <div class="info-card">
+                    <div class="item-title">${task.b}</div>
+                    <div class="detail-text">${task.d || '（請留意大會通知）'}</div>
+                    ${isSzeLingBlessing ? `<button class="bless-btn" onclick="toggleBless(this)">✨ 查看思靈專屬祝福語 ✨</button>${blessingContent}` : ''}
+                </div>
+            </div>
+        `;
+    });
+    section.innerHTML = html;
+    mainContent.appendChild(section);
+});
+
+function toggleBless(btn) {
+    const box = btn.nextElementSibling;
+    const isShow = box.style.display === 'block';
+    box.style.display = isShow ? 'none' : 'block';
+    btn.innerText = isShow ? '✨ 查看思靈專屬祝福語 ✨' : '🔼 收起祝福語';
+}
+</script>
+
+<footer>12.29 Wedding Day Rundown · 祝婚禮圓滿順利</footer>
+</body>
+</html>
